@@ -1,10 +1,11 @@
 const express = require("express");
 const cors = require("cors");
-
 const { v4: uuidv4 } = require("uuid");
 const app = express();
-
 app.use(cors());
+const server = require("http").Server(app);
+const io = require("socket.io")(server);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.get("/", (req, res) => {
@@ -15,9 +16,15 @@ app.get("/join", (req, res) => {
   res.send({ link: uuidv4() });
 });
 
-app.get("/:room", (req, res) => {
-  res.send;
+// app.get("/:room", (req, res) => {
+//   res.send;
+// });
+io.on("connection", (socket) => {
+  socket.on("join-room", (roomId) => {
+    console.log("roomId = ", roomId);
+
+    // socket.join(roomId);
+    // console.log(socket.to(roomId).broadcas.emit("hello"));
+  });
 });
-app.listen(3000, () => {
-  console.log("server  started");
-});
+server.listen(3000);
