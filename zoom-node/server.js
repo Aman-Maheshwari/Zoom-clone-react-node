@@ -16,15 +16,15 @@ app.get("/join", (req, res) => {
   res.send({ link: uuidv4() });
 });
 
-// app.get("/:room", (req, res) => {
-//   res.send;
-// });
+app.get("/room/:id", (req, res) => {
+  console.log("res", req.params.id);
+  res.send;
+});
 io.on("connection", (socket) => {
   socket.on("join-room", (roomId) => {
     console.log("roomId = ", roomId);
-
-    // socket.join(roomId);
-    // console.log(socket.to(roomId).broadcas.emit("hello"));
+    socket.join(roomId);
+    socket.to(roomId).emit("user-connected");
   });
 });
 server.listen(3000);

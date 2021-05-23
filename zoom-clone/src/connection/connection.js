@@ -1,17 +1,13 @@
 import openSocket from "socket.io-client";
 
-const getVideoAudioStream = (video = true, audio = true) => {
-  const myNavigator = navigator.mediaDevices.getUserMedia;
-  return myNavigator({
-    video: video
-      ? {
-          frameRate: 12,
-          noiseSuppression: true,
-          width: { min: 640, ideal: 1280, max: 1920 },
-          height: { min: 480, ideal: 720, max: 1080 },
-        }
-      : false,
-    audio: audio,
+/**
+ *
+ * @returns audio and video stream
+ */
+const getVideoAudioStream = () => {
+  return navigator.mediaDevices.getUserMedia({
+    video: true,
+    audio: true,
   });
 };
 
@@ -21,22 +17,13 @@ export const connection = (roomId) => {
   myVideo.setAttribute("id", "video");
   myVideo.muted = true;
   let myVideoStream;
-  // getVideoAudioStream().then((stream) => {
-  //   if (stream) {
-  //     myVideoStream = stream;
-  //     addVideoStream(myVideo, stream);
-  //   }
-  // });
 
-  navigator.mediaDevices
-    .getUserMedia({
-      video: true,
-      audio: true,
-    })
-    .then((stream) => {
+  getVideoAudioStream().then((stream) => {
+    if (stream) {
       myVideoStream = stream;
       addVideoStream(myVideo, stream);
-    });
+    }
+  });
   // socket.emit("join-room", roomId);
   // socket.on("user-connected", () => {
   //   console.log("user connected");
