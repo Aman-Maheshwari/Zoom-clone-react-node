@@ -16,11 +16,13 @@ function JoinRoom() {
     <div>
       {/* this is the video grid div where user video will be visible */}
       <div id="video-grid"></div>
-      <button onClick={xyz} title="join room">
-        join rrom{" "}
-      </button>
-      {console.log(roomID)}
-      {roomID ? <Redirect to={`/room/${roomID}`} /> : null}
+      {roomID ? (
+        <Redirect to={`/room/${roomID}`} />
+      ) : (
+        <button onClick={xyz} title="join room">
+          join rrom{" "}
+        </button>
+      )}
       <div />
     </div>
   );

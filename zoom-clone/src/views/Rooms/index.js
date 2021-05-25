@@ -1,24 +1,27 @@
 import React, { useEffect } from "react";
 import useSocketPeerInitialization from "../../services/Initialization.js";
-import useSocketServices from "../../services/socket.js";
+import { useSocketServices } from "../../services/socket.js";
 
 import "./styles.css";
 
 const Room = (props) => {
+  console.log("component");
   const roomID = props.match.params.id;
-  const [socket, peer] = useSocketPeerInitialization();
-  const connection = useSocketServices(socket, peer);
   useEffect(() => {
-    if (roomID !== undefined) {
-      startConnection();
-    }
+    console.log("inside 123");
+    startConnection();
   }, []);
   const startConnection = () => {
     socket.on("connect", () => {
-      connection(roomID);
       console.log("connected");
     });
+    peer.on("open", (id) => {
+      console.log("here id = ", id);
+      socket.emit("join-room", roomID, id);
+      connection(roomID);
+    });
   };
+  const [socket, connection, peer] = useSocketServices();
 
   return (
     <div>

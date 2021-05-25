@@ -30,9 +30,8 @@ app.get("/join", (req, res) => {
   res.send({ link: uuidv4() });
 });
 
-app.get("/room/:id", (req, res) => {
-  console.log("res", req.params.id);
-  res.send;
+app.get("/*", (req, res) => {
+  res.send("No data Found");
 });
 io.on("connection", (socket) => {
   socket.on("join-room", (roomId, userID) => {

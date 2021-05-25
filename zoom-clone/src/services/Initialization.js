@@ -15,7 +15,6 @@ const useSocketPeerInitialization = () => {
   const initializePeerConnection = () => {
     return new Peer("", {
       host: "/",
-      //   secure: true,
       port: "3030",
       path: "/peerjs",
     });
