@@ -34,10 +34,17 @@ app.get("/*", (req, res) => {
   res.send("No data Found");
 });
 io.on("connection", (socket) => {
-  socket.on("join-room", (roomId, userID) => {
-    console.log("roomId = ", roomId);
-    socket.join(roomId);
-    socket.to(roomId).emit("user-connected", userID);
+  socket.on("join-room", (obj) => {
+    const {
+      id,
+      roomID: { roomID },
+    } = obj;
+    console.log("roomId = ", roomID, id);
+    socket.join(roomID);
+    socket.to(roomID).emit("user-connected", id);
+    socket.on("disconnect", () => {
+      socket.to(roomID).emit("user-disconnected", id);
+    });
   });
 });
 server.listen(3000, () => {
