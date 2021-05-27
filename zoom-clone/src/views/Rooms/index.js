@@ -35,17 +35,18 @@ const getVideoAudioStream = () => {
   });
 };
 
-const connection = (roomId, id, socket, peer) => {
+const connection = (roomId, id, socket, peer, videoContainer) => {
   let peers_list = {};
   const videoGrid = document.getElementById("video-grid");
   const myVideo = document.createElement("video");
-  myVideo.setAttribute("id", "video");
   myVideo.muted = true;
-
   socket.on("user-disconnected", (userID) => {
     console.log("disconnectd success");
+    console.log(peers_list[userID]);
     peers_list[userID] && peers_list[userID].close();
+    removeVideo(userID, videoContainer);
   });
+
   getVideoAudioStream().then((stream) => {
     if (stream) {
       // myVideoStream = stream;
@@ -70,18 +71,17 @@ const connection = (roomId, id, socket, peer) => {
     //jiski stream aari hai usko band kiya
     call.on("close", () => {
       console.log("closing peers listeners here", call.metadata.id);
-      // removeVideo(call.metadata.id);
+      removeVideo(call.metadata.id, videoContainer);
     });
 
     call.on("error", () => {
       console.log("peer error ------");
-      // removeVideo(call.metadata.id);
+      removeVideo(call.metadata.id, videoContainer);
     });
   });
 
   const connectToNewUser = (userID, myStream) => {
     const call = peer.call(userID, myStream, { metadata: { id } });
-    let peers_ = {};
     // peers_[userID] = call;
     // setPeers(peers, peers_);
     const video = document.createElement("video");
@@ -91,7 +91,11 @@ const connection = (roomId, id, socket, peer) => {
     });
     call.on("close", () => {
       console.log("closing new user", userID);
-      // this.removeVideo(call.metadata.id);
+      removeVideo(userID, videoContainer);
+    });
+    call.on("error", () => {
+      console.log("peer error ------");
+      removeVideo(userID, videoContainer);
     });
 
     //jisko call kiya uska call object store karlo
@@ -103,38 +107,53 @@ const connection = (roomId, id, socket, peer) => {
       ID,
       stream,
     };
-    // if (videoContainer == undefined || !videoContainer[createObj.ID]) {
-    //   let obj = { ...videoContainer, ...createObj };
-    //   setVideoContainer(obj);
-    // }
-    video.srcObject = stream;
-    video.addEventListener("loadedmetadata", () => {
-      video.play();
-    });
-    videoGrid.append(video);
+    if (!videoContainer[createObj.ID]) {
+      videoContainer[createObj.ID] = { ...createObj };
+
+      video.setAttribute("id", ID);
+
+      video.srcObject = stream;
+      video.addEventListener("loadedmetadata", () => {
+        video.play();
+      });
+      videoGrid.append(video);
+    } else {
+      console.log("Element = ", document.getElementById(createObj.id));
+    }
   };
 };
 
-const destroyConnection = (socket, peer, roomId, id) => {
-  // const myMediaTracks = videoContainer[id]?.stream.getTracks();
-  // myMediaTracks?.forEach((track) => {
-  //   track.stop();
-  // });
+const removeVideo = (id, videoContainer) => {
+  delete videoContainer[id];
+  const video = document.getElementById(id);
+  if (video) video.remove();
+};
+
+const destroyConnection = (socket, peer, roomId, id, videoContainer) => {
+  console.log("destroy = ", videoContainer[id].stream.getTracks());
+  const myMediaTracks = videoContainer[id]?.stream.getTracks();
+  myMediaTracks?.forEach((track) => {
+    track.stop();
+  });
   socket.disconnect();
+  removeVideo(id, videoContainer);
   peer.destroy();
 };
+
 const Room = (props) => {
   console.log("component");
   const roomID = props.match.params.id;
   const socketRef = useRef(null);
   const peerRef = useRef(null);
   const peerId = useRef(null);
+  const videoContainer = useRef(null);
 
   useEffect(() => {
     const [socket, peer] = InitializeConnection();
     startConnection(socket, peer);
     socketRef.current = socket;
     peerRef.current = peer;
+    videoContainer.current = {};
   }, []);
 
   const startConnection = (currSocket, currPeer) => {
@@ -145,7 +164,7 @@ const Room = (props) => {
       console.log("this is my id = ", id);
       currSocket.emit("join-room", roomID, id);
       peerId.current = id;
-      connection(roomID, id, currSocket, currPeer);
+      connection(roomID, id, currSocket, currPeer, videoContainer.current);
     });
   };
 
@@ -154,7 +173,8 @@ const Room = (props) => {
       socketRef.current,
       peerRef.current,
       roomID,
-      peerId.current
+      peerId.current,
+      videoContainer.current
     );
   };
 
