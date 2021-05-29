@@ -1,7 +1,5 @@
 import React from "react";
 
-import ReactPlayer from "react-player/youtube";
-
 const getVideoAudioStream = () => {
   return navigator.mediaDevices.getUserMedia({
     video: true,

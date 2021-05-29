@@ -7,7 +7,6 @@ import {
   recordStreamStart,
 } from "../../services/socket.js";
 import "./styles.css";
-import ReactPlayer from "react-player/youtube";
 
 import { InitializeConnection } from "../../services/Initialization.js";
 
