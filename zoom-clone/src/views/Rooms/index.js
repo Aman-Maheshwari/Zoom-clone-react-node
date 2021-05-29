@@ -1,144 +1,15 @@
 import React, { useEffect, useRef, useState } from "react";
-import useSocketPeerInitialization from "../../services/Initialization.js";
-import { useSocketServices } from "../../services/socket.js";
-import openSocket from "socket.io-client";
-import Peer from "peerjs";
+// import useSocketPeerInitialization from "../../services/Initialization.js";
+import {
+  connection,
+  destroyConnection,
+  recordStreamStop,
+  recordStreamStart,
+} from "../../services/socket.js";
 import "./styles.css";
+import ReactPlayer from "react-player/youtube";
 
-const InitializeConnection = () => {
-  const initializeSocketConnection = () => {
-    return openSocket.connect("http://localhost:3000", {
-      secure: true,
-      reconnection: true,
-      rejectUnauthorized: false,
-      reconnectionAttempts: 10,
-      transports: ["websocket"],
-    });
-  };
-  const initializePeerConnection = () => {
-    return new Peer(null, {
-      host: "/",
-      port: "3030",
-      path: "/peerjs",
-    });
-  };
-  const socket = initializeSocketConnection();
-  const peer = initializePeerConnection();
-
-  return [socket, peer];
-};
-
-const getVideoAudioStream = () => {
-  return navigator.mediaDevices.getUserMedia({
-    video: true,
-    audio: false,
-  });
-};
-
-const connection = (roomId, id, socket, peer, videoContainer) => {
-  let peers_list = {};
-  const videoGrid = document.getElementById("video-grid");
-  const myVideo = document.createElement("video");
-  myVideo.muted = true;
-  socket.on("user-disconnected", (userID) => {
-    console.log("disconnectd success");
-    console.log(peers_list[userID]);
-    peers_list[userID] && peers_list[userID].close();
-    removeVideo(userID, videoContainer);
-  });
-
-  getVideoAudioStream().then((stream) => {
-    if (stream) {
-      // myVideoStream = stream;
-      addVideoStream(myVideo, stream, id);
-      socket.on("user-connected", (userID) => {
-        console.log("new user connected", userID);
-        connectToNewUser(userID, stream);
-      });
-    }
-  });
-
-  peer.on("call", (call) => {
-    console.log("inside peer call");
-    getVideoAudioStream().then((stream) => {
-      // console.log("inside answer call");
-      call.answer(stream);
-      const video = document.createElement("video");
-      call.on("stream", (userVideoStream) => {
-        addVideoStream(video, userVideoStream, call.metadata.id);
-      });
-    });
-    //jiski stream aari hai usko band kiya
-    call.on("close", () => {
-      console.log("closing peers listeners here", call.metadata.id);
-      removeVideo(call.metadata.id, videoContainer);
-    });
-
-    call.on("error", () => {
-      console.log("peer error ------");
-      removeVideo(call.metadata.id, videoContainer);
-    });
-  });
-
-  const connectToNewUser = (userID, myStream) => {
-    const call = peer.call(userID, myStream, { metadata: { id } });
-    // peers_[userID] = call;
-    // setPeers(peers, peers_);
-    const video = document.createElement("video");
-    call.on("stream", (userVideoStream) => {
-      console.log("getting stream", userVideoStream);
-      addVideoStream(video, userVideoStream, userID);
-    });
-    call.on("close", () => {
-      console.log("closing new user", userID);
-      removeVideo(userID, videoContainer);
-    });
-    call.on("error", () => {
-      console.log("peer error ------");
-      removeVideo(userID, videoContainer);
-    });
-
-    //jisko call kiya uska call object store karlo
-    peers_list[userID] = call;
-  };
-
-  const addVideoStream = (video, stream, ID) => {
-    let createObj = {
-      ID,
-      stream,
-    };
-    if (!videoContainer[createObj.ID]) {
-      videoContainer[createObj.ID] = { ...createObj };
-
-      video.setAttribute("id", ID);
-
-      video.srcObject = stream;
-      video.addEventListener("loadedmetadata", () => {
-        video.play();
-      });
-      videoGrid.append(video);
-    } else {
-      console.log("Element = ", document.getElementById(createObj.id));
-    }
-  };
-};
-
-const removeVideo = (id, videoContainer) => {
-  delete videoContainer[id];
-  const video = document.getElementById(id);
-  if (video) video.remove();
-};
-
-const destroyConnection = (socket, peer, roomId, id, videoContainer) => {
-  console.log("destroy = ", videoContainer[id].stream.getTracks());
-  const myMediaTracks = videoContainer[id]?.stream.getTracks();
-  myMediaTracks?.forEach((track) => {
-    track.stop();
-  });
-  socket.disconnect();
-  removeVideo(id, videoContainer);
-  peer.destroy();
-};
+import { InitializeConnection } from "../../services/Initialization.js";
 
 const Room = (props) => {
   console.log("component");
@@ -147,6 +18,8 @@ const Room = (props) => {
   const peerRef = useRef(null);
   const peerId = useRef(null);
   const videoContainer = useRef(null);
+  const dataRef = useRef(null);
+  const recorderRef = useRef(null);
 
   useEffect(() => {
     const [socket, peer] = InitializeConnection();
@@ -178,12 +51,48 @@ const Room = (props) => {
     );
   };
 
+  const startRecording = async () => {
+    // const stream = await navigator.mediaDevices.getDisplayMedia({
+    //   video: true,
+    //   audio: true,
+    // });
+    // var options;
+    // if (MediaRecorder.isTypeSupported("video/webm;codecs=vp9")) {
+    //   options = { mimeType: "video/webm; codecs=vp9" };
+    // } else if (MediaRecorder.isTypeSupported("video/webm;codecs=vp8")) {
+    //   options = { mimeType: "video/webm; codecs=vp8" };
+    // }
+    // const recorder = new MediaRecorder(stream, options);
+    // recorderRef.current = recorder;
+    // const stopR = recordStreamStart(recorder);
+    // console.log("stop = ", stream.getAudioTracks()[0]);
+    // console.log(stream.getVideoTracks()[0]);
+    recorderRef.current = await recordStreamStart();
+  };
+
+  const stopRecording = () => {
+    recordStreamStop(recorderRef.current);
+  };
+
   return (
     <div>
       <div id="video-grid"></div>
+      {/* <video id="video-grid2" height="300" width="400" autoPlay>
+        <source src="test.webm" type="video/webm" />
+        not working
+      </video> */}
+      <div id="video-grid1"></div>
+      {/* <ReactPlayer url={URL.createObjectURL(completeBlob)} /> */}
+
       <button title="join room">room joined</button>
       <button title="destroyConnection" onClick={disconnect}>
         disconnecct
+      </button>
+      <button title="Record" onClick={startRecording}>
+        Record
+      </button>
+      <button title="Record" onClick={stopRecording}>
+        SRecord
       </button>
       <div />
     </div>
