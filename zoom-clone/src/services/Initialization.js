@@ -1,8 +1,7 @@
 import openSocket from "socket.io-client";
-
 import Peer from "peerjs";
 
-const useSocketPeerInitialization = () => {
+export const InitializeConnection = () => {
   const initializeSocketConnection = () => {
     return openSocket.connect("http://localhost:3000", {
       secure: true,
@@ -13,13 +12,14 @@ const useSocketPeerInitialization = () => {
     });
   };
   const initializePeerConnection = () => {
-    return new Peer("", {
+    return new Peer(null, {
       host: "/",
       port: "3030",
       path: "/peerjs",
     });
   };
-  return [initializeSocketConnection(), initializePeerConnection()];
-};
+  const socket = initializeSocketConnection();
+  const peer = initializePeerConnection();
 
-export default useSocketPeerInitialization;
+  return [socket, peer];
+};
